@@ -27,7 +27,7 @@ const envSchema = z.object({
   CLOUDINARY_API_SECRET: z.string().min(1, 'CLOUDINARY_API_SECRET is required'),
 
   // OpenAI
-  OPENAI_API_KEY: z.string().min(1, 'OPENAI_API_KEY is required'),
+  OPENAI_API_KEY: z.string().optional(),
 
   // Gemini AI
   GEMINI_API_KEY: z.string().optional(),

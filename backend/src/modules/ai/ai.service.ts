@@ -13,7 +13,7 @@ export class AIService {
   constructor() {
     this.repository = new AIRepository();
     this.openai = new OpenAI({
-      apiKey: env.OPENAI_API_KEY,
+      apiKey: env.OPENAI_API_KEY || 'dummy-key-placeholder',
     });
 
     if (env.GEMINI_API_KEY && !env.GEMINI_API_KEY.startsWith('your-gemini') && env.GEMINI_API_KEY !== '') {
