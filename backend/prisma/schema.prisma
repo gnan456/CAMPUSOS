@@ -1,0 +1,265 @@
+// =============================================================================
+// CampusOS — Prisma Schema
+// =============================================================================
+// Fully normalized schema with all MVP entities, relations, and indexes.
+// Designed to support 10,000+ concurrent users with proper indexing strategy.
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================================================
+// Enums
+// =============================================================================
+
+enum Role {
+  STUDENT
+  ADMIN
+  CLUB_COORDINATOR
+}
+
+enum EventStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+enum ComplaintStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum ComplaintCategory {
+  INFRASTRUCTURE
+  ACADEMIC
+  HOSTEL
+  CANTEEN
+  LIBRARY
+  TRANSPORT
+  OTHER
+}
+
+enum LostFoundType {
+  LOST
+  FOUND
+}
+
+enum LostFoundStatus {
+  ACTIVE
+  RESOLVED
+  EXPIRED
+}
+
+enum NotificationType {
+  EVENT
+  COMPLAINT
+  SYSTEM
+  AI
+  LOST_FOUND
+}
+
+enum AIChatRole {
+  USER
+  ASSISTANT
+}
+
+// =============================================================================
+// User
+// =============================================================================
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(STUDENT)
+  avatar    String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  createdEvents      Event[]             @relation("EventCreator")
+  eventRegistrations EventRegistration[]
+  complaints         Complaint[]         @relation("ComplaintAuthor")
+  resolvedComplaints Complaint[]         @relation("ComplaintResolver")
+  notes              Note[]
+  notifications      Notification[]
+  lostFoundItems     LostFound[]
+  aiChats            AIChat[]
+
+  @@index([role])
+  @@index([email])
+  @@index([createdAt])
+}
+
+// =============================================================================
+// Event Management
+// =============================================================================
+
+model Event {
+  id          String      @id @default(cuid())
+  title       String
+  description String
+  date        DateTime
+  venue       String
+  capacity    Int
+  status      EventStatus @default(PENDING_APPROVAL)
+  imageUrl    String?
+
+  creatorId   String
+  creator     User        @relation("EventCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  registrations EventRegistration[]
+
+  @@index([creatorId])
+  @@index([status])
+  @@index([date])
+  @@index([createdAt])
+}
+
+model EventRegistration {
+  id           String   @id @default(cuid())
+  registeredAt DateTime @default(now())
+
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventId])
+  @@index([userId])
+  @@index([eventId])
+}
+
+// =============================================================================
+// Complaint Management
+// =============================================================================
+
+model Complaint {
+  id          String            @id @default(cuid())
+  title       String
+  description String
+  category    ComplaintCategory
+  status      ComplaintStatus   @default(OPEN)
+
+  userId      String
+  user        User              @relation("ComplaintAuthor", fields: [userId], references: [id], onDelete: Cascade)
+
+  resolvedById String?
+  resolvedBy   User?            @relation("ComplaintResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([userId])
+  @@index([resolvedById])
+  @@index([status])
+  @@index([category])
+  @@index([createdAt])
+}
+
+// =============================================================================
+// Notes & Resources
+// =============================================================================
+
+model Note {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  fileUrl     String
+  subject     String
+  semester    Int
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@index([subject])
+  @@index([semester])
+  @@index([createdAt])
+}
+
+// =============================================================================
+// Notifications
+// =============================================================================
+
+model Notification {
+  id      String           @id @default(cuid())
+  title   String
+  message String
+  isRead  Boolean          @default(false)
+  type    NotificationType @default(SYSTEM)
+
+  userId  String
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime       @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([type])
+  @@index([createdAt])
+}
+
+// =============================================================================
+// Lost & Found
+// =============================================================================
+
+model LostFound {
+  id          String          @id @default(cuid())
+  title       String
+  description String
+  imageUrl    String?
+  type        LostFoundType
+  status      LostFoundStatus @default(ACTIVE)
+  location    String
+
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// =============================================================================
+// AI Chat
+// =============================================================================
+
+model AIChat {
+  id      String     @id @default(cuid())
+  role    AIChatRole
+  content String
+
+  userId  String
+  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
