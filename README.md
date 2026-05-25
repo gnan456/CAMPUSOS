@@ -4,47 +4,47 @@
 
 ![CampusOS Banner](https://via.placeholder.com/1200x400/0f172a/ffffff?text=CampusOS)
 
-## 🌟 Overview
+## Overview
 
 CampusOS is a full-stack web application tailored for educational institutions. It solves real-world campus management problems by providing a unified dashboard where students, club coordinators, and administrators can interact seamlessly. From tracking events and filing complaints, to sharing study notes and recovering lost items—CampusOS brings the entire campus ecosystem online.
 
-## 🚀 Key Features
+## Key Features
 
-### 🛡️ Multi-Role Architecture
+### Multi-Role Architecture
 The platform is built on a secure, multi-tier RBAC (Role-Based Access Control) system:
 - **Student**: The primary end-user. Can browse and register for events, file infrastructure complaints, share and download study notes, and report lost/found items.
 - **Club Coordinator**: A trusted student leader. Inherits all student capabilities, plus the ability to independently create and publish campus events.
 - **Admin**: The platform moderator. Has full oversight with access to platform-wide analytics, the ability to update complaint statuses, and "God Mode" moderation powers (can take down any event, delete any note, or remove any lost & found item).
 
-### 📅 Event Management (With Pre-registration)
+### Event Management (With Pre-registration)
 - Club Coordinators can create events which are auto-published.
 - Students can view event details (date, location, capacity) and register.
 - Admins can monitor events and forcefully "Take Down" inappropriate events, which automatically notifies all registered attendees.
 
-### 📝 Notes & Study Resources
+### Notes & Study Resources
 - A peer-to-peer file sharing hub for academic materials.
 - Students can upload PDFs/Images, tagging them by Subject and Semester.
 - Direct downloads from Cloudinary CDN.
 
-### 🔍 Lost & Found
+### Lost & Found
 - A dedicated space to report lost belongings or post found items.
 - Features image uploads for easy identification.
 - Items can be marked as "Resolved" once returned to the owner.
 
-### 📢 Complaints Helpdesk
+### Complaints Helpdesk
 - Students can file categorized complaints (Infrastructure, Hostel, Academic, Canteen, etc.).
 - Admins review complaints and update statuses (`OPEN` → `IN_PROGRESS` → `RESOLVED`).
 
-### 🤖 AI Campus Assistant (Gemini)
+### AI Campus Assistant (Gemini)
 - An integrated AI chatbot powered by Google's Gemini API.
 - Acts as a smart campus guide, capable of answering questions about campus policies, generating emails, or helping with academic queries.
 
-### 🔔 Real-time Notification System
+### Real-time Notification System
 - In-app push notifications alert users of important changes.
 - Automatically notifies students when an event they registered for is taken down.
 - Notifies creators when their items are interacted with or moderated.
 
-## 💻 Tech Stack
+## Tech Stack
 
 ### Frontend
 - **Framework**: Next.js 14+ (App Router)
@@ -65,7 +65,7 @@ The platform is built on a secure, multi-tier RBAC (Role-Based Access Control) s
 - **File Storage**: Cloudinary
 - **AI Integration**: Google Gemini API (@google/genai)
 
-## 🛠️ Local Development Setup
+## Local Development Setup
 
 ### Prerequisites
 Ensure you have the following installed on your machine:
@@ -143,7 +143,7 @@ npm run dev
 
 The application will now be running at `http://localhost:3000`.
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```text
 CAMPUSOS/
@@ -167,12 +167,12 @@ CAMPUSOS/
     └── types/              # Frontend TypeScript definitions
 ```
 
-## 🔒 Security Measures Implemented
+## Security Measures Implemented
 - **Role-Based Access Control (RBAC):** Backend routes are strictly protected by role-checking middleware.
 - **JWT Authentication:** Secure token rotation with short-lived access tokens and http-only refresh strategies.
 - **Rate Limiting:** API endpoints are rate-limited to prevent brute-force attacks and abuse.
 - **Input Validation:** Zod schemas ensure strict typing and validation on both the frontend and backend.
 - **Password Hashing:** Passwords are never stored in plaintext (bcrypt).
 
-## 📄 License
+## License
 Private — All rights reserved by the author.
