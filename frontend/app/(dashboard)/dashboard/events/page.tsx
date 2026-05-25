@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Calendar, MapPin, Users, Plus, X, CheckCircle2, Clock } from 'lucide-react';
+import { Calendar, MapPin, Users, Plus, X, CheckCircle2, Clock, Filter, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,14 +9,16 @@ import { z } from 'zod';
 import { eventApi } from '@/services/event.api';
 import { useAuthStore } from '@/store/auth.store';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select } from '@/components/ui/select';
 import { Portal } from '@/components/ui/portal';
 import { createEventSchema, type CreateEventFormData } from '@/lib/validators';
 import { Role, type Event } from '@/types';
+import { cn } from '@/lib/utils';
 
 // ─── Registration confirmation schema ─────────────────────────────────────────
 const registerSchema = z.object({
@@ -30,13 +32,13 @@ const registerSchema = z.object({
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
-const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'danger' | 'info' | 'secondary'> = {
+const statusVariant: Record<string, 'default' | 'success' | 'warning' | 'error' | 'ghost'> = {
   APPROVED: 'success',
   PENDING_APPROVAL: 'warning',
-  DRAFT: 'secondary',
-  REJECTED: 'danger',
-  CANCELLED: 'danger',
-  COMPLETED: 'info',
+  DRAFT: 'ghost',
+  REJECTED: 'error',
+  CANCELLED: 'error',
+  COMPLETED: 'default',
 };
 
 export default function EventsPage() {
@@ -45,17 +47,27 @@ export default function EventsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+  // Filters State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [dateFilter, setDateFilter] = useState('ALL');
+
   // Registration modal state
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
+
+  // Admin Take-down confirm modal
+  const [eventToTakeDown, setEventToTakeDown] = useState<Event | null>(null);
+  const [isTakeDownOpen, setIsTakeDownOpen] = useState(false);
+  const [isTakingDown, setIsTakingDown] = useState(false);
 
   const canCreateEvent = user?.role === Role.ADMIN || user?.role === Role.CLUB_COORDINATOR;
 
   const fetchEvents = useCallback(async () => {
     try {
       setIsLoading(true);
-      const { events: data } = await eventApi.getEvents({ limit: 20 });
+      const { events: data } = await eventApi.getEvents({ limit: 40 });
       setEvents(data);
     } catch {
       toast.error('Failed to load events');
@@ -152,35 +164,65 @@ export default function EventsPage() {
     }
   };
 
-  const handleDeleteEvent = async (id: string) => {
+  const confirmTakeDown = (event: Event) => {
+    setEventToTakeDown(event);
+    setIsTakeDownOpen(true);
+  };
+
+  const handleTakeDownSubmit = async () => {
+    if (!eventToTakeDown) return;
+    setIsTakingDown(true);
     try {
-      await eventApi.deleteEvent(id);
+      await eventApi.deleteEvent(eventToTakeDown.id);
       toast.success('Event taken down successfully and notifications sent');
+      setIsTakeDownOpen(false);
+      setEventToTakeDown(null);
       fetchEvents();
     } catch {
       toast.error('Failed to take down event');
+    } finally {
+      setIsTakingDown(false);
     }
+  };
+
+  const isUserRegistered = (event: Event) => {
+    return event.registrations?.some(reg => reg.userId === user?.id) || false;
   };
 
   useEffect(() => {
     fetchEvents();
   }, [fetchEvents]);
 
+  // Apply Frontend Filtering
+  const filteredEvents = events.filter((event) => {
+    const matchesSearch =
+      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.venue.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.description.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesStatus = statusFilter === 'ALL' || event.status === statusFilter;
+
+    const isUpcoming = new Date(event.date) >= new Date();
+    const matchesDate =
+      dateFilter === 'ALL' ||
+      (dateFilter === 'UPCOMING' && isUpcoming) ||
+      (dateFilter === 'PAST' && !isUpcoming);
+
+    return matchesSearch && matchesStatus && matchesDate;
+  });
+
   if (isLoading) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-white">Events</h1>
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold font-syne text-text-primary tracking-tight">Events</h1>
+            <p className="text-sm text-text-secondary">Loading your events calendar...</p>
+          </div>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="animate-pulse">
-              <CardContent className="p-5">
-                <div className="h-4 w-3/4 rounded bg-slate-800 mb-3" />
-                <div className="h-3 w-1/2 rounded bg-slate-800 mb-2" />
-                <div className="h-3 w-2/3 rounded bg-slate-800" />
-              </CardContent>
-            </Card>
+            <Card key={i} className="skeleton h-[360px] border border-border-subtle" />
           ))}
         </div>
       </div>
@@ -188,243 +230,282 @@ export default function EventsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 font-dm-sans">
+      {/* Welcome Title Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Events</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <h1 className="text-2xl lg:text-3xl font-extrabold font-syne text-text-primary tracking-tight">Events</h1>
+          <p className="text-sm text-text-secondary mt-1">
             Browse and register for campus events
           </p>
         </div>
         {canCreateEvent && (
-          <Button onClick={() => setIsCreateOpen(true)}>
-            <Plus className="h-4 w-4" />
+          <Button onClick={() => setIsCreateOpen(true)} className="cursor-pointer">
+            <Plus className="h-4 w-4 shrink-0" />
             Create Event
           </Button>
         )}
       </div>
 
-      {events.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <Calendar className="h-12 w-12 text-slate-600 mb-4" />
-            <p className="text-lg font-medium text-slate-400">No events yet</p>
-            <p className="text-sm text-slate-500 mt-1">
+      {/* Filter Toolbar */}
+      <div className="flex flex-col md:flex-row gap-3 items-center bg-bg-surface p-4 rounded-[10px] border border-border-subtle shadow-sm">
+        <div className="w-full md:flex-1">
+          <Input
+            placeholder="Search events by title or venue..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full"
+          />
+        </div>
+        <div className="flex gap-3 w-full md:w-auto shrink-0">
+          <div className="w-1/2 md:w-44">
+            <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="ALL">All Statuses</option>
+              <option value="APPROVED">Approved</option>
+              <option value="PENDING_APPROVAL">Pending Approval</option>
+              <option value="CANCELLED">Cancelled</option>
+            </Select>
+          </div>
+          <div className="w-1/2 md:w-44">
+            <Select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)}>
+              <option value="ALL">All Dates</option>
+              <option value="UPCOMING">Upcoming</option>
+              <option value="PAST">Past Events</option>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      {filteredEvents.length === 0 ? (
+        <Card variant="default">
+          <CardContent className="flex flex-col items-center justify-center py-20">
+            <Calendar className="h-12 w-12 text-text-muted mb-4" />
+            <h3 className="text-lg font-bold font-syne text-text-primary">No events found</h3>
+            <p className="text-sm text-text-secondary mt-1 max-w-sm text-center">
               {canCreateEvent
-                ? 'Create the first event for your campus!'
-                : 'Check back later for upcoming events.'}
+                ? 'Create a new event or adjust your filters.'
+                : 'No upcoming events match your filters. Check back later!'}
             </p>
+            {canCreateEvent && (
+              <Button onClick={() => setIsCreateOpen(true)} className="mt-4">
+                <Plus className="h-4 w-4" />
+                Create Event
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {events.map((event) => (
-            <Card
-              key={event.id}
-              className="group hover:border-slate-700 transition-all duration-300"
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <CardTitle className="text-base leading-tight">
-                    {event.title}
-                  </CardTitle>
-                  <Badge variant={statusVariant[event.status] || 'secondary'}>
-                    {event.status.replace('_', ' ')}
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredEvents.map((event, idx) => {
+            const registered = isUserRegistered(event);
+            const registrationsCount = event._count?.registrations ?? 0;
+            const capacityPercent = Math.min(100, Math.round((registrationsCount / event.capacity) * 100));
+
+            return (
+              <Card
+                key={event.id}
+                variant="elevated"
+                className="stagger-item group flex flex-col justify-between h-full relative"
+              >
+                {/* Image Placeholder with grid overlay */}
+                <div className="h-40 w-full bg-gradient-to-br from-brand-primary to-brand-secondary/80 relative flex items-center justify-center overflow-hidden shrink-0 select-none">
+                  <div className="absolute inset-0 bg-black/25" />
+                  <Calendar className="h-12 w-12 text-white/35 group-hover:scale-110 transition-transform duration-300" />
+                  <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:20px_20px]" />
+                  
+                  {/* Absolute Badge corner overlays */}
+                  {registered && (
+                    <Badge variant="success" className="absolute top-3 left-3 shadow-md">
+                      Registered
+                    </Badge>
+                  )}
+                  <Badge variant={statusVariant[event.status] || 'ghost'} className="absolute top-3 right-3 shadow-md capitalize">
+                    {event.status.toLowerCase().replace('_', ' ')}
                   </Badge>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-sm text-slate-400 line-clamp-2">
-                  {event.description}
-                </p>
-                <div className="space-y-1.5 text-xs text-slate-500">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-3.5 w-3.5" />
-                    {new Date(event.date).toLocaleDateString('en-US', {
-                      weekday: 'short',
-                      month: 'short',
-                      day: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
+
+                <div className="p-5 flex-1 flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <h3 className="text-base font-bold font-syne text-text-primary tracking-tight leading-snug group-hover:text-brand-secondary transition-colors">
+                      {event.title}
+                    </h3>
+                    <p className="text-sm text-text-secondary font-dm-sans line-clamp-2 leading-relaxed">
+                      {event.description}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-3.5 w-3.5" />
-                    {event.venue}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="h-3.5 w-3.5" />
-                    {event._count?.registrations ?? 0} / {event.capacity} registered
-                  </div>
-                </div>
-                {user?.role === Role.STUDENT && (event.status === 'APPROVED' || event.status === 'PENDING_APPROVAL') && (
-                  <Button
-                    size="sm"
-                    className="w-full mt-2"
-                    onClick={() => openRegisterModal(event)}
-                    disabled={(event._count?.registrations ?? 0) >= event.capacity}
-                  >
-                    {(event._count?.registrations ?? 0) >= event.capacity
-                      ? 'Full – No Seats Left'
-                      : 'Register'}
-                  </Button>
-                )}
-                {user?.role === Role.ADMIN && (
-                  <div className="flex flex-col gap-2 mt-2">
-                    {event.status === 'PENDING_APPROVAL' && (
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="default"
-                          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-                          onClick={() => handleUpdateStatus(event.id, 'APPROVED')}
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          className="w-full"
-                          onClick={() => handleUpdateStatus(event.id, 'REJECTED')}
-                        >
-                          Reject
-                        </Button>
+
+                  <div className="mt-5 space-y-4 pt-4 border-t border-border-subtle/50">
+                    {/* Event metadata details */}
+                    <div className="space-y-2 text-xs text-text-secondary font-dm-sans">
+                      <div className="flex items-center gap-2.5">
+                        <Clock className="h-3.5 w-3.5 text-brand-primary shrink-0" />
+                        <span>
+                          {new Date(event.date).toLocaleDateString('en-US', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
                       </div>
-                    )}
-                    {(event.status === 'APPROVED' || event.status === 'PENDING_APPROVAL') && (
+                      <div className="flex items-center gap-2.5">
+                        <MapPin className="h-3.5 w-3.5 text-brand-primary shrink-0" />
+                        <span className="truncate">{event.venue}</span>
+                      </div>
+                    </div>
+
+                    {/* Progress capacity gauge */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs text-text-secondary font-mono leading-none">
+                        <span>Attending</span>
+                        <span className="font-semibold">{registrationsCount} / {event.capacity} seats</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-bg-base rounded-full overflow-hidden border border-border-subtle">
+                        <div
+                          className={cn(
+                            "h-full rounded-full transition-all duration-300",
+                            capacityPercent >= 100 ? 'bg-error' : capacityPercent >= 80 ? 'bg-warning' : 'bg-brand-primary'
+                          )}
+                          style={{ width: `${capacityPercent}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Bottom Action buttons */}
+                    {user?.role === Role.STUDENT && (event.status === 'APPROVED' || event.status === 'PENDING_APPROVAL') && (
                       <Button
                         size="sm"
-                        variant="destructive"
-                        className="w-full bg-red-600 hover:bg-red-700"
-                        onClick={() => handleDeleteEvent(event.id)}
+                        variant={registered ? 'secondary' : 'primary'}
+                        className="w-full"
+                        onClick={() => openRegisterModal(event)}
+                        disabled={registered || registrationsCount >= event.capacity}
                       >
-                        Take Down
+                        {registered
+                          ? 'Registered ✓'
+                          : registrationsCount >= event.capacity
+                          ? 'Event Full'
+                          : 'Register for Event'}
                       </Button>
                     )}
+
+                    {user?.role === Role.ADMIN && (
+                      <div className="flex flex-col gap-2">
+                        {event.status === 'PENDING_APPROVAL' && (
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="w-full bg-success/15 border-success/30 hover:bg-success/25 text-success cursor-pointer"
+                              onClick={() => handleUpdateStatus(event.id, 'APPROVED')}
+                            >
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="w-full hover:bg-error/15 hover:text-error cursor-pointer"
+                              onClick={() => handleUpdateStatus(event.id, 'REJECTED')}
+                            >
+                              Reject
+                            </Button>
+                          </div>
+                        )}
+                        {(event.status === 'APPROVED' || event.status === 'PENDING_APPROVAL') && (
+                          <Button
+                            size="sm"
+                            variant="danger"
+                            className="w-full"
+                            onClick={() => confirmTakeDown(event)}
+                          >
+                            Take Down
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
 
       {/* ─── Registration Confirmation Modal ─────────────────────────────────── */}
       {isRegisterOpen && selectedEvent && (
         <Portal>
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm p-4 flex justify-center">
-            <div className="relative my-auto w-full max-w-lg">
-              <Card className="border-slate-700 bg-slate-950 shadow-2xl">
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm p-4 flex justify-center items-center">
+            <div className="relative w-full max-w-lg animate-page-enter">
+              <Card variant="glass" className="border-border-strong shadow-2xl">
                 {/* Header */}
-                <CardHeader className="border-b border-slate-800/60 pb-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-xl font-bold text-white">
-                        Confirm Registration
-                      </CardTitle>
-                      <p className="text-sm text-slate-400 mt-1">
-                        Review your details before registering
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => { setIsRegisterOpen(false); setSelectedEvent(null); }}
-                      className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
+                <div className="flex items-start justify-between border-b border-border-subtle p-5">
+                  <div>
+                    <h3 className="text-lg font-bold font-syne text-text-primary">Confirm Registration</h3>
+                    <p className="text-xs text-text-secondary mt-1 font-dm-sans">
+                      Verify your details to secure a seat
+                    </p>
                   </div>
-                </CardHeader>
+                  <button
+                    onClick={() => { setIsRegisterOpen(false); setSelectedEvent(null); }}
+                    className="rounded-lg p-1 text-text-muted hover:bg-bg-elevated hover:text-text-primary transition-colors cursor-pointer"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
 
-                {/* Event Summary Banner */}
-                <div className="mx-6 mt-5 rounded-xl bg-violet-600/10 border border-violet-500/20 p-4">
-                  <h3 className="font-semibold text-violet-300 text-sm mb-2">
-                    📅 Event Details
-                  </h3>
-                  <p className="text-white font-medium">{selectedEvent.title}</p>
-                  <div className="mt-2 space-y-1 text-xs text-slate-400">
+                {/* Event Summary */}
+                <div className="mx-5 mt-5 rounded-lg bg-brand-primary/10 border border-brand-primary/20 p-4">
+                  <h4 className="font-bold text-brand-primary text-xs font-syne tracking-wider uppercase mb-2">
+                    Event Overview
+                  </h4>
+                  <p className="text-text-primary font-bold text-sm leading-snug">{selectedEvent.title}</p>
+                  <div className="mt-3.5 space-y-1.5 text-xs text-text-secondary font-dm-sans">
                     <div className="flex items-center gap-2">
-                      <Clock className="h-3.5 w-3.5 text-violet-400" />
-                      {new Date(selectedEvent.date).toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
+                      <Clock className="h-3.5 w-3.5 text-brand-primary" />
+                      <span>
+                        {new Date(selectedEvent.date).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <MapPin className="h-3.5 w-3.5 text-violet-400" />
-                      {selectedEvent.venue}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Users className="h-3.5 w-3.5 text-violet-400" />
-                      {selectedEvent._count?.registrations ?? 0} / {selectedEvent.capacity} spots filled
+                      <MapPin className="h-3.5 w-3.5 text-brand-primary" />
+                      <span>{selectedEvent.venue}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Registration Form */}
                 <form onSubmit={regHandleSubmit(onRegisterSubmit)}>
-                  <CardContent className="space-y-4 pt-5">
-                    <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">
-                      Your Information
-                    </p>
-
+                  <CardContent className="space-y-4 pt-5 pb-2">
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
+                      <div className="space-y-1">
                         <Label htmlFor="reg-name" required>Full Name</Label>
-                        <Input
-                          id="reg-name"
-                          placeholder="Your full name"
-                          {...regRegister('name')}
-                          error={regErrors.name?.message}
-                        />
+                        <Input id="reg-name" placeholder="Your name" {...regRegister('name')} error={regErrors.name?.message} />
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="space-y-1">
                         <Label htmlFor="reg-email" required>Email</Label>
-                        <Input
-                          id="reg-email"
-                          type="email"
-                          placeholder="you@college.edu"
-                          {...regRegister('email')}
-                          error={regErrors.email?.message}
-                        />
+                        <Input id="reg-email" type="email" placeholder="you@university.edu" {...regRegister('email')} error={regErrors.email?.message} />
                       </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
+                      <div className="space-y-1">
                         <Label htmlFor="reg-phone">Phone Number</Label>
-                        <Input
-                          id="reg-phone"
-                          type="tel"
-                          placeholder="e.g. 9876543210"
-                          {...regRegister('phone')}
-                          error={regErrors.phone?.message}
-                        />
+                        <Input id="reg-phone" type="tel" placeholder="9876543210" {...regRegister('phone')} error={regErrors.phone?.message} />
                       </div>
-                      <div className="space-y-1.5">
+                      <div className="space-y-1">
                         <Label htmlFor="reg-roll">Roll Number</Label>
-                        <Input
-                          id="reg-roll"
-                          placeholder="e.g. CS2024001"
-                          {...regRegister('rollNumber')}
-                        />
+                        <Input id="reg-roll" placeholder="CS202610" {...regRegister('rollNumber')} />
                       </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <Label htmlFor="reg-dept">Department</Label>
-                      <Input
-                        id="reg-dept"
-                        placeholder="e.g. Computer Science"
-                        {...regRegister('department')}
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="reg-special">Special Requirements <span className="text-slate-500 font-normal">(optional)</span></Label>
+                    <div className="space-y-1">
+                      <Label htmlFor="reg-special">Special Requirements</Label>
                       <Textarea
                         id="reg-special"
                         placeholder="Dietary needs, accessibility requirements, etc."
@@ -432,14 +513,9 @@ export default function EventsPage() {
                         className="min-h-[70px]"
                       />
                     </div>
-
-                    <p className="text-[11px] text-slate-500 bg-slate-900 rounded-lg p-3 leading-relaxed">
-                      ✅ By clicking <strong className="text-slate-300">Confirm Registration</strong>, you agree to attend this event. 
-                      Your details will be shared with the event organiser.
-                    </p>
                   </CardContent>
 
-                  <CardFooter className="flex justify-end gap-3 border-t border-slate-800/60 pt-4">
+                  <div className="flex justify-end gap-3 border-t border-border-subtle p-5 mt-4">
                     <Button
                       type="button"
                       variant="ghost"
@@ -449,10 +525,9 @@ export default function EventsPage() {
                       Cancel
                     </Button>
                     <Button type="submit" isLoading={isRegistering}>
-                      <CheckCircle2 className="h-4 w-4" />
-                      Confirm Registration
+                      Confirm &amp; Register
                     </Button>
-                  </CardFooter>
+                  </div>
                 </form>
               </Card>
             </div>
@@ -463,54 +538,95 @@ export default function EventsPage() {
       {/* ─── Create Event Modal ───────────────────────────────────────────────── */}
       {isCreateOpen && (
         <Portal>
-          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-4 flex justify-center">
-            <div className="relative my-auto w-full max-w-lg">
-              <Card className="border-slate-800 bg-slate-950">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-xl font-bold text-white">Create New Event</CardTitle>
-                    <button
-                      onClick={() => setIsCreateOpen(false)}
-                      className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
-                  </div>
-                </CardHeader>
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm p-4 flex justify-center items-center">
+            <div className="relative w-full max-w-lg animate-page-enter">
+              <Card variant="glass" className="border-border-strong shadow-2xl">
+                <div className="flex items-center justify-between border-b border-border-subtle p-5">
+                  <h3 className="text-lg font-bold font-syne text-text-primary">Create New Event</h3>
+                  <button
+                    onClick={() => setIsCreateOpen(false)}
+                    className="rounded-lg p-1 text-text-muted hover:bg-bg-elevated hover:text-text-primary transition-colors cursor-pointer"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
                 <form onSubmit={handleSubmit(onCreateSubmit)}>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
+                  <CardContent className="space-y-4 pt-5 pb-2">
+                    <div className="space-y-1">
                       <Label htmlFor="event-title" required>Event Title</Label>
                       <Input id="event-title" placeholder="Annual Tech Fest" {...register('title')} error={errors.title?.message} />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <Label htmlFor="event-description" required>Description</Label>
                       <Textarea id="event-description" placeholder="Provide details about the event..." {...register('description')} error={errors.description?.message} />
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
                         <Label htmlFor="event-date" required>Date &amp; Time</Label>
                         <Input id="event-date" type="datetime-local" {...register('date')} error={errors.date?.message} />
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-1">
                         <Label htmlFor="event-capacity" required>Capacity</Label>
                         <Input id="event-capacity" type="number" {...register('capacity', { valueAsNumber: true })} error={errors.capacity?.message} />
                       </div>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <Label htmlFor="event-venue" required>Venue</Label>
                       <Input id="event-venue" placeholder="Main Auditorium" {...register('venue')} error={errors.venue?.message} />
                     </div>
                   </CardContent>
-                  <CardFooter className="flex justify-end gap-3 border-t border-slate-800/60 pt-4">
+                  <div className="flex justify-end gap-3 border-t border-border-subtle p-5 mt-4">
                     <Button type="button" variant="ghost" onClick={() => setIsCreateOpen(false)}>
                       Cancel
                     </Button>
                     <Button type="submit" isLoading={isSubmitting}>
-                      Create Event
+                      Publish Event
                     </Button>
-                  </CardFooter>
+                  </div>
                 </form>
+              </Card>
+            </div>
+          </div>
+        </Portal>
+      )}
+
+      {/* ─── Admin Take-Down Confirm Modal ────────────────────────────────────── */}
+      {isTakeDownOpen && eventToTakeDown && (
+        <Portal>
+          <div className="fixed inset-0 z-50 overflow-y-auto bg-black/75 backdrop-blur-sm p-4 flex justify-center items-center">
+            <div className="relative w-full max-w-md animate-page-enter">
+              <Card variant="elevated" className="border-error/35 shadow-2xl bg-bg-surface">
+                <div className="p-6 text-center space-y-4">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-error/10 text-error">
+                    <AlertTriangle className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold font-syne text-text-primary">Take Down Event?</h3>
+                    <p className="text-xs text-text-secondary mt-1.5 font-dm-sans leading-relaxed">
+                      Are you sure you want to delete <strong className="text-text-primary">&quot;{eventToTakeDown.title}&quot;</strong>? This action will notify all registered students and remove it permanently.
+                    </p>
+                  </div>
+                  <div className="flex gap-3 pt-3">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="w-full"
+                      onClick={() => { setIsTakeDownOpen(false); setEventToTakeDown(null); }}
+                      disabled={isTakingDown}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="danger"
+                      className="w-full"
+                      onClick={handleTakeDownSubmit}
+                      isLoading={isTakingDown}
+                    >
+                      Confirm Deletion
+                    </Button>
+                  </div>
+                </div>
               </Card>
             </div>
           </div>

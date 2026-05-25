@@ -9,18 +9,9 @@ import { Eye, EyeOff, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/auth.store';
 import { registerSchema, type RegisterFormData } from '@/lib/validators';
-import { Role } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from '@/components/ui/card';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -50,85 +41,84 @@ export default function RegisterPage() {
   };
 
   return (
-    <Card className="border-slate-800/50">
-      <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Create your account</CardTitle>
-        <CardDescription>
+    <div className="w-full">
+      <div className="mb-8">
+        <h3 className="text-2xl lg:text-3xl font-bold font-syne text-text-primary tracking-tight">
+          Create your account
+        </h3>
+        <p className="text-sm text-text-secondary mt-1.5 font-dm-sans">
           Join CampusOS and get started
-        </CardDescription>
-      </CardHeader>
+        </p>
+      </div>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="register-name" required>
-              Full Name
-            </Label>
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <div className="space-y-1">
+          <Label htmlFor="register-name" required>
+            Full Name
+          </Label>
+          <Input
+            id="register-name"
+            placeholder="John Doe"
+            error={errors.name?.message}
+            {...register('name')}
+          />
+        </div>
+
+        <div className="space-y-1">
+          <Label htmlFor="register-email" required>
+            Email
+          </Label>
+          <Input
+            id="register-email"
+            type="email"
+            placeholder="you@university.edu"
+            error={errors.email?.message}
+            {...register('email')}
+          />
+        </div>
+
+        <div className="space-y-1">
+          <Label htmlFor="register-password" required>
+            Password
+          </Label>
+          <div className="relative">
             <Input
-              id="register-name"
-              placeholder="John Doe"
-              error={errors.name?.message}
-              {...register('name')}
+              id="register-password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Min 8 chars, mixed case, number, special"
+              error={errors.password?.message}
+              {...register('password')}
             />
+            <button
+              type="button"
+              className="absolute right-3.5 top-3 text-text-muted hover:text-text-secondary transition-colors cursor-pointer"
+              onClick={() => setShowPassword(!showPassword)}
+              tabIndex={-1}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </button>
           </div>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="register-email" required>
-              Email
-            </Label>
-            <Input
-              id="register-email"
-              type="email"
-              placeholder="you@university.edu"
-              error={errors.email?.message}
-              {...register('email')}
-            />
-          </div>
+        <div className="space-y-1">
+          <Label htmlFor="register-confirm" required>
+            Confirm Password
+          </Label>
+          <Input
+            id="register-confirm"
+            type="password"
+            placeholder="Re-enter your password"
+            error={errors.confirmPassword?.message}
+            {...register('confirmPassword')}
+          />
+        </div>
 
-
-          <div className="space-y-2">
-            <Label htmlFor="register-password" required>
-              Password
-            </Label>
-            <div className="relative">
-              <Input
-                id="register-password"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Min 8 chars, mixed case, number, special"
-                error={errors.password?.message}
-                {...register('password')}
-              />
-              <button
-                type="button"
-                className="absolute right-3 top-3 text-slate-500 hover:text-slate-300 transition-colors"
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex={-1}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="register-confirm" required>
-              Confirm Password
-            </Label>
-            <Input
-              id="register-confirm"
-              type="password"
-              placeholder="Re-enter your password"
-              error={errors.confirmPassword?.message}
-              {...register('confirmPassword')}
-            />
-          </div>
-        </CardContent>
-
-        <CardFooter className="flex flex-col gap-4">
+        <div className="pt-4 space-y-4">
           <Button
             type="submit"
             className="w-full"
@@ -139,17 +129,17 @@ export default function RegisterPage() {
             Create Account
           </Button>
 
-          <p className="text-sm text-slate-400 text-center">
+          <p className="text-sm text-text-secondary text-center font-dm-sans">
             Already have an account?{' '}
             <Link
               href="/login"
-              className="text-violet-400 hover:text-violet-300 font-medium transition-colors"
+              className="text-brand-primary hover:text-brand-secondary font-medium transition-colors"
             >
               Sign in
             </Link>
           </p>
-        </CardFooter>
+        </div>
       </form>
-    </Card>
+    </div>
   );
 }

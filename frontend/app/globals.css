@@ -1,18 +1,135 @@
 @import "tailwindcss";
 
 /*
- * CampusOS — Global Design Tokens
- *
- * Premium dark-mode-first design system.
- * Accent: violet-indigo gradient
- * Background: slate-950 base with layered surfaces
+ * CampusOS — Precision Dark Design Tokens
  */
 
 :root {
-  --background: #020617;
-  --foreground: #f1f5f9;
-  --accent: #7c3aed;
-  --accent-light: #a78bfa;
+  /* Backgrounds */
+  --os-bg-base:       #080d17;   /* page canvas */
+  --os-bg-surface:    #0d1526;   /* cards, sidebar */
+  --os-bg-elevated:   #121e33;   /* hover states, inner panels */
+  --os-bg-overlay:    #182540;   /* modals, dropdowns */
+  --os-bg-input:      #0a1020;   /* form inputs */
+
+  /* Borders */
+  --os-border-subtle:  rgba(255,255,255,0.05);
+  --os-border-default: rgba(255,255,255,0.09);
+  --os-border-strong:  rgba(255,255,255,0.16);
+  --os-border-focus:   #4f8ef7;
+
+  /* Brand — Electric Blue + Cyan */
+  --os-brand:          #4f8ef7;          /* primary CTA, active nav, links */
+  --os-brand-hover:    #6ba3f9;          /* hover state of brand */
+  --os-brand-dim:      rgba(79,142,247,0.15); /* brand tint backgrounds */
+  --os-brand-glow:     rgba(79,142,247,0.25); /* glow/shadow effect */
+  --os-accent:         #22d3ee;          /* secondary accent, AI features */
+  --os-accent-dim:     rgba(34,211,238,0.12);
+
+  /* Text */
+  --os-text-primary:   #eaf0fb;   /* headings, important text */
+  --os-text-secondary: #8fa3c0;   /* labels, descriptions */
+  --os-text-muted:     #4a6080;   /* placeholders, disabled */
+  --os-text-inverse:   #080d17;   /* text on light/brand backgrounds */
+
+  /* Semantic */
+  --os-success:        #22c55e;
+  --os-success-dim:    rgba(34,197,94,0.12);
+  --os-warning:        #f59e0b;
+  --os-warning-dim:    rgba(245,158,11,0.12);
+  --os-error:          #ef4444;
+  --os-error-dim:      rgba(239,68,68,0.12);
+  --os-info:           #38bdf8;
+  --os-info-dim:       rgba(56,189,248,0.12);
+
+  /* Module Accent Colors */
+  --os-events:         #22c55e;    /* green  — life & activity */
+  --os-events-dim:     rgba(34,197,94,0.12);
+  --os-complaints:     #f59e0b;    /* amber  — attention & urgency */
+  --os-complaints-dim: rgba(245,158,11,0.12);
+  --os-notes:          #38bdf8;    /* sky    — knowledge & clarity */
+  --os-notes-dim:      rgba(56,189,248,0.12);
+  --os-lostfound:      #f472b6;    /* pink   — search & discovery */
+  --os-lostfound-dim:  rgba(244,114,182,0.12);
+  --os-notif:          #ef4444;    /* red    — urgency & alerts */
+  --os-notif-dim:      rgba(239,68,68,0.12);
+  --os-ai:             #22d3ee;    /* cyan   — intelligence & tech */
+  --os-ai-dim:         rgba(34,211,238,0.12);
+  --os-analytics:      #a78bfa;    /* purple — data & insight */
+  --os-analytics-dim:  rgba(167,139,250,0.12);
+
+  /* Role Colors */
+  --os-role-student:     #4f8ef7;
+  --os-role-coordinator: #a78bfa;
+  --os-role-admin:       #f59e0b;
+
+  /* Shadows */
+  --os-shadow-sm:  0 1px 3px rgba(0,0,0,0.5), 0 0 0 1px var(--os-border-subtle);
+  --os-shadow-md:  0 4px 16px rgba(0,0,0,0.6), 0 0 0 1px var(--os-border-default);
+  --os-shadow-lg:  0 8px 40px rgba(0,0,0,0.7), 0 0 0 1px var(--os-border-strong);
+  --os-shadow-brand: 0 4px 20px var(--os-brand-glow);
+}
+
+@theme {
+  --color-os-bg-base: var(--os-bg-base);
+  --color-os-bg-surface: var(--os-bg-surface);
+  --color-os-bg-elevated: var(--os-bg-elevated);
+  --color-os-bg-overlay: var(--os-bg-overlay);
+  --color-os-bg-input: var(--os-bg-input);
+
+  --color-os-border-subtle: var(--os-border-subtle);
+  --color-os-border-default: var(--os-border-default);
+  --color-os-border-strong: var(--os-border-strong);
+  --color-os-border-focus: var(--os-border-focus);
+
+  --color-os-brand: var(--os-brand);
+  --color-os-brand-hover: var(--os-brand-hover);
+  --color-os-brand-dim: var(--os-brand-dim);
+  --color-os-brand-glow: var(--os-brand-glow);
+  --color-os-accent: var(--os-accent);
+  --color-os-accent-dim: var(--os-accent-dim);
+
+  --color-os-text-primary: var(--os-text-primary);
+  --color-os-text-secondary: var(--os-text-secondary);
+  --color-os-text-muted: var(--os-text-muted);
+  --color-os-text-inverse: var(--os-text-inverse);
+
+  --color-os-success: var(--os-success);
+  --color-os-success-dim: var(--os-success-dim);
+  --color-os-warning: var(--os-warning);
+  --color-os-warning-dim: var(--os-warning-dim);
+  --color-os-error: var(--os-error);
+  --color-os-error-dim: var(--os-error-dim);
+  --color-os-info: var(--os-info);
+  --color-os-info-dim: var(--os-info-dim);
+
+  --color-os-events: var(--os-events);
+  --color-os-events-dim: var(--os-events-dim);
+  --color-os-complaints: var(--os-complaints);
+  --color-os-complaints-dim: var(--os-complaints-dim);
+  --color-os-notes: var(--os-notes);
+  --color-os-notes-dim: var(--os-notes-dim);
+  --color-os-lostfound: var(--os-lostfound);
+  --color-os-lostfound-dim: var(--os-lostfound-dim);
+  --color-os-notif: var(--os-notif);
+  --color-os-notif-dim: var(--os-notif-dim);
+  --color-os-ai: var(--os-ai);
+  --color-os-ai-dim: var(--os-ai-dim);
+  --color-os-analytics: var(--os-analytics);
+  --color-os-analytics-dim: var(--os-analytics-dim);
+
+  --color-os-role-student: var(--os-role-student);
+  --color-os-role-coordinator: var(--os-role-coordinator);
+  --color-os-role-admin: var(--os-role-admin);
+
+  --font-syne: var(--font-syne), system-ui, sans-serif;
+  --font-dm: var(--font-dm), system-ui, sans-serif;
+  --font-mono: var(--font-mono), monospace;
+
+  --shadow-sm: var(--os-shadow-sm);
+  --shadow-md: var(--os-shadow-md);
+  --shadow-lg: var(--os-shadow-lg);
+  --shadow-brand: var(--os-shadow-brand);
 }
 
 * {
@@ -28,16 +145,21 @@ html {
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  background-color: var(--os-bg-base);
+  color: var(--os-text-primary);
+  font-family: var(--font-dm), system-ui, -apple-system, sans-serif;
   min-height: 100vh;
+  /* Ambient canvas background gradients */
+  background-image: 
+    radial-gradient(ellipse at 80% 0%, rgba(79, 142, 247, 0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 0% 100%, rgba(34, 211, 238, 0.04) 0%, transparent 40%);
+  background-attachment: fixed;
 }
 
-/* Scrollbar styling for dark mode */
+/* Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -45,24 +167,30 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 3px;
+  background: var(--os-bg-overlay);
+  border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: var(--os-border-strong);
+}
+
+/* Selection styles */
+::selection {
+  background-color: var(--os-brand-dim);
+  color: var(--os-brand);
 }
 
 /* Focus visible for keyboard navigation */
 *:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--os-brand);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
-/* Animated gradient background for auth pages */
+/* Auth Pages decorative mesh layout gradient */
 .auth-gradient {
-  background: linear-gradient(135deg, #020617 0%, #0f172a 40%, #1e1b4b 70%, #020617 100%);
+  background: linear-gradient(135deg, var(--os-bg-base) 0%, var(--os-bg-surface) 100%);
   position: relative;
   overflow: hidden;
 }
@@ -72,45 +200,76 @@ body {
   position: absolute;
   inset: 0;
   background: 
-    radial-gradient(ellipse at 20% 50%, rgba(124, 58, 237, 0.08) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 80%, rgba(139, 92, 246, 0.05) 0%, transparent 50%);
+    radial-gradient(ellipse at 20% 40%, rgba(79, 142, 247, 0.08) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(34, 211, 238, 0.08) 0%, transparent 60%);
   pointer-events: none;
 }
 
 /* Glass card effect */
 .glass {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(13, 21, 38, 0.6);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(148, 163, 184, 0.1);
+  border: 1px solid var(--os-border-default);
 }
 
-/* Subtle float animation */
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-6px); }
+/* Animations */
+
+/* Page Enter animation */
+@keyframes os-page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.animate-float {
-  animation: float 6s ease-in-out infinite;
+.os-page-enter {
+  animation: os-page-enter 0.25s ease-out forwards;
 }
 
-/* Fade in animation */
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+/* Skeleton Shimmer */
+@keyframes os-shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
 }
 
-.animate-fade-in {
-  animation: fade-in 0.5s ease-out forwards;
+.os-skeleton {
+  background: linear-gradient(90deg,
+    var(--os-bg-elevated) 25%,
+    var(--os-bg-overlay) 50%,
+    var(--os-bg-elevated) 75*%);
+  background-size: 1200px 100%;
+  animation: os-shimmer 1.6s infinite linear;
+  border-radius: 6px;
 }
 
-/* Slide in from left */
-@keyframes slide-in-left {
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
+/* Pulse Dot */
+@keyframes os-pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.85); }
 }
 
-.animate-slide-in-left {
-  animation: slide-in-left 0.3s ease-out forwards;
+.os-pulse-dot {
+  animation: os-pulse-dot 1.5s ease-in-out infinite;
 }
+
+/* Typing Indicator Animation */
+@keyframes os-typing {
+  0%, 60%, 100% { transform: translateY(0); }
+  30%            { transform: translateY(-4px); }
+}
+
+/* Hover lift transition utility */
+.hover-lift {
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--os-shadow-md);
+  border-color: var(--os-border-strong);
+}
+
+/* Stagger list item animation delay */
+.os-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.os-stagger > *:nth-child(2) { animation-delay: 40ms; }
+.os-stagger > *:nth-child(3) { animation-delay: 80ms; }
+.os-stagger > *:nth-child(4) { animation-delay: 120ms; }
+.os-stagger > *:nth-child(5) { animation-delay: 160ms; }

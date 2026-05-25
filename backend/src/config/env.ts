@@ -29,6 +29,9 @@ const envSchema = z.object({
   // OpenAI
   OPENAI_API_KEY: z.string().min(1, 'OPENAI_API_KEY is required'),
 
+  // Gemini AI
+  GEMINI_API_KEY: z.string().optional(),
+
   // Client URL
   CLIENT_URL: z.string().url().default('http://localhost:3000'),
 });

@@ -1,19 +1,31 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 
-const Card = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      'rounded-xl border border-slate-800 bg-slate-900/60 backdrop-blur-sm shadow-xl',
-      className
-    )}
-    {...props}
-  />
-));
+export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
+  variant?: 'default' | 'elevated' | 'glass';
+}
+
+const Card = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, variant = 'default', ...props }, ref) => {
+    const variantClasses = {
+      default: 'bg-bg-surface border border-border-subtle shadow-sm',
+      elevated: 'bg-bg-elevated border border-border-default shadow-md hover-lift hover:shadow-lg',
+      glass: 'bg-white/[0.03] backdrop-blur-md border border-border-default',
+    };
+
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          'rounded-[10px] overflow-hidden transition-all duration-200',
+          variantClasses[variant],
+          className
+        )}
+        {...props}
+      />
+    );
+  }
+);
 Card.displayName = 'Card';
 
 const CardHeader = React.forwardRef<
@@ -35,7 +47,7 @@ const CardTitle = React.forwardRef<
   <h3
     ref={ref}
     className={cn(
-      'text-xl font-semibold leading-none tracking-tight text-white',
+      'text-lg font-bold font-syne tracking-tight text-text-primary',
       className
     )}
     {...props}
@@ -49,7 +61,7 @@ const CardDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn('text-sm text-slate-400', className)}
+    className={cn('text-sm text-text-secondary font-dm-sans', className)}
     {...props}
   />
 ));
@@ -69,7 +81,7 @@ const CardFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn('flex items-center p-6 pt-0', className)}
+    className={cn('flex items-center p-6 pt-0 border-t border-border-subtle/50 mt-6', className)}
     {...props}
   />
 ));

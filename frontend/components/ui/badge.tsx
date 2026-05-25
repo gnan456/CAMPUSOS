@@ -3,16 +3,18 @@ import { cn } from '@/lib/utils';
 import { cva, type VariantProps } from 'class-variance-authority';
 
 const badgeVariants = cva(
-  'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors',
+  'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium font-mono border transition-all duration-150',
   {
     variants: {
       variant: {
-        default: 'bg-violet-500/15 text-violet-400 border border-violet-500/20',
-        success: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20',
-        warning: 'bg-amber-500/15 text-amber-400 border border-amber-500/20',
-        danger: 'bg-red-500/15 text-red-400 border border-red-500/20',
-        info: 'bg-sky-500/15 text-sky-400 border border-sky-500/20',
-        secondary: 'bg-slate-700/50 text-slate-300 border border-slate-600',
+        default: 'bg-brand-primary/10 text-brand-primary border-brand-primary/25',
+        success: 'bg-success/10 text-success border-success/25',
+        warning: 'bg-warning/10 text-warning border-warning/25',
+        error: 'bg-error/10 text-error border-error/25',
+        ghost: 'bg-bg-elevated text-text-secondary border-border-subtle',
+        student: 'bg-role-student/10 text-role-student border-role-student/25',
+        coordinator: 'bg-role-coordinator/10 text-role-coordinator border-role-coordinator/25',
+        admin: 'bg-role-admin/10 text-role-admin border-role-admin/25',
       },
     },
     defaultVariants: {
